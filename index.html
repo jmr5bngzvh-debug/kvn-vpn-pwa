@@ -182,7 +182,8 @@ function init(){
             document.getElementById('loginStatus').textContent='Ошибка авторизации';
         }
     }).catch(function(e){
-        document.getElementById('loginStatus').textContent='Ошибка сети: '+e.message;
+        document.getElementById('loginStatus').textContent='Ошибка: '+(e.message||e);
+        console.log('Auth error:'+e);
     });
 }
 
@@ -203,18 +204,19 @@ function api(ep){
 function showApp(){
     document.getElementById('loginScreen').classList.remove('active');
     document.getElementById('appScreen').classList.add('active');
-    loadAll().then(function(){goTo('home')});
+    loadAll().then(function(){goTo('home')}).catch(function(){goTo('home')});
 }
 
 // === DATA ===
 function loadAll(){
-    return Promise.all([
-        api('/subscription').then(function(d){sub=d}).catch(function(){}),
-        api('/stats').then(function(d){stats=d}).catch(function(){}),
-        api('/config').then(function(d){cfg=d}).catch(function(){}),
-        api('/price').then(function(d){price=d}).catch(function(){}),
-        api('/referral').then(function(d){ref=d}).catch(function(){})
-    ]);
+    var ps=[
+        api('/subscription').then(function(d){sub=d}).catch(function(e){console.log('sub err:'+e)}),
+        api('/stats').then(function(d){stats=d}).catch(function(e){console.log('stats err:'+e)}),
+        api('/config').then(function(d){cfg=d}).catch(function(e){console.log('cfg err:'+e)}),
+        api('/price').then(function(d){price=d}).catch(function(e){console.log('price err:'+e)}),
+        api('/referral').then(function(d){ref=d}).catch(function(e){console.log('ref err:'+e)})
+    ];
+    return Promise.allSettled(ps);
 }
 
 // === NAVIGATION ===
