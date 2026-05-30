@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta name="theme-color" content="#060613">
+<title>КВН VPN</title>
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--accent:#00d4ff;--accent2:#7b2fff;--success:#00ff88;--danger:#ff3355;--warning:#ffaa00;
+--bg0:#060613;--bg1:#0a0f1e;--bg2:#0f1628;--bg3:#162040;
+--text:#e0e8ff;--text2:#7a85a0;--text3:#4a5570;
+--border:rgba(0,200,255,0.08);--card:rgba(10,15,40,0.65)
+}
+body{background:var(--bg0);color:var(--text);font:14px 'Inter',sans-serif;min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+
+/* Screens */
+.screen{display:none;flex-direction:column;min-height:100vh;position:relative}
+.screen.active{display:flex}
+
+/* Header */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg1);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+.hdr-title{font-size:16px;font-weight:700}
+.hdr-btn{background:none;border:1px solid var(--border);border-radius:8px;color:var(--text2);padding:6px 12px;font-size:12px;cursor:pointer}
+.hdr-btn:active{background:var(--bg3)}
+
+/* Content */
+.content{flex:1;padding:16px;max-width:480px;margin:0 auto;width:100%}
+
+/* Cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px}
+.card-title{font-size:13px;color:var(--text2);margin-bottom:8px;font-weight:500}
+.card-value{font-size:22px;font-weight:700}
+
+/* Stat grid */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.stat-box{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;text-align:center}
+.stat-box .num{font-size:24px;font-weight:700;margin-bottom:2px}
+.stat-box .lbl{font-size:11px;color:var(--text2)}
+.c-accent{color:var(--accent)}.c-success{color:var(--success)}.c-danger{color:var(--danger)}.c-warning{color:var(--warning)}.c-purple{color:var(--accent2)}
+
+/* Buttons */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border:none;border-radius:12px;font:600 14px 'Inter',sans-serif;cursor:pointer;transition:all .2s;margin-bottom:8px}
+.btn:active{transform:scale(0.98)}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-danger{background:transparent;border:1px solid var(--danger);color:var(--danger)}
+.btn-success{background:transparent;border:1px solid var(--success);color:var(--success)}
+
+/* Nav */
+.nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--bg1);border-top:1px solid var(--border);padding:6px 0;padding-bottom:env(safe-area-inset-bottom);z-index:20;max-width:480px;margin:0 auto}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;background:none;border:none;color:var(--text3);font:11px 'Inter',sans-serif;cursor:pointer}
+.nav-btn.active{color:var(--accent)}
+.nav-btn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* Progress */
+.progress{background:var(--bg3);border-radius:6px;height:8px;overflow:hidden;margin-top:8px}
+.progress-bar{height:100%;border-radius:6px;transition:width .5s}
+
+/* Config item */
+.cfg-item{display:flex;align-items:center;justify-content:space-between;padding:14px;background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:8px}
+.cfg-name{font-weight:600;font-size:14px}
+.cfg-sub{font-size:12px;color:var(--text2);margin-top:2px}
+.cfg-actions{display:flex;gap:6px}
+.cfg-btn{width:36px;height:36px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px}
+.cfg-btn:active{background:var(--bg3)}
+
+/* Payment details */
+.pay-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}
+.pay-row:last-child{border:none}
+.pay-label{font-size:12px;color:var(--text2)}
+.pay-val{font-size:14px;font-weight:600;font-family:monospace}
+.copy-btn{background:var(--bg3);border:none;border-radius:6px;color:var(--accent);padding:4px 10px;font-size:11px;cursor:pointer;margin-left:8px}
+
+/* Login */
+.login-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px;text-align:center}
+.login-wrap .logo{font-size:64px;margin-bottom:16px}
+.login-wrap h1{font-size:24px;font-weight:800;margin-bottom:8px}
+.login-wrap p{color:var(--text2);font-size:14px;margin-bottom:24px}
+
+/* Loading */
+.spinner{width:32px;height:32px;border:3px solid var(--bg3);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:40px auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Badge */
+.badge{display:inline-block;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600}
+.badge-success{background:rgba(0,255,136,0.15);color:var(--success)}
+.badge-danger{background:rgba(255,51,85,0.15);color:var(--danger)}
+
+/* QR */
+.qr-wrap{text-align:center;padding:16px}
+.qr-wrap img{border-radius:12px;border:1px solid var(--border);max-width:256px}
+
+/* Referral */
+.ref-card{background:linear-gradient(135deg,rgba(123,47,255,0.15),rgba(0,212,255,0.08));border:1px solid rgba(123,47,255,0.2);border-radius:16px;padding:20px;text-align:center;margin-bottom:12px}
+.ref-link{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;font:12px monospace;color:var(--accent);word-break:break-all;margin:12px 0}
+
+/* Help */
+.help-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.help-item:last-child{border:none}
+.help-icon{width:40px;height:40px;border-radius:10px;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.help-text h3{font-size:14px;font-weight:600;margin-bottom:2px}
+.help-text p{font-size:12px;color:var(--text2)}
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen" class="screen active">
+<div class="login-wrap">
+<div class="logo">🛡</div>
+<h1>КВН VPN</h1>
+<p>Быстрый и надёжный VPN для всех</p>
+<div id="loginStatus" style="color:var(--text2);font-size:13px"></div>
+</div>
+</div>
+
+<!-- MAIN APP -->
+<div id="appScreen" class="screen">
+<div class="hdr">
+<div class="hdr-title">🛡 КВН VPN</div>
+<button class="hdr-btn" onclick="doLogout()">Выйти</button>
+</div>
+<div class="content" id="pageContent">
+<div class="spinner"></div>
+</div>
+<div class="nav" id="mainNav">
+<button class="nav-btn active" onclick="goTo('home')">
+<svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+Главная
+</button>
+<button class="nav-btn" onclick="goTo('configs')">
+<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+Конфиги
+</button>
+<button class="nav-btn" onclick="goTo('payment')">
+<svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+Оплата
+</button>
+<button class="nav-btn" onclick="goTo('help')">
+<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+Помощь
+</button>
+</div>
+</div>
+
+<script>
+var API='https://privetkvn.duckdns.org/api/v1';
+var token=null, tgId=null;
+var sub=null, stats=null, cfg=null, price=null, ref=null;
+var currentTab='home';
+
+// === AUTH ===
+function init(){
+    var initData = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData;
+    if(!initData){
+        document.getElementById('loginStatus').textContent='Откройте из Telegram бота @vpnkvnbot';
+        return;
+    }
+    Telegram.WebApp.ready();
+    Telegram.WebApp.expand();
+    document.getElementById('loginStatus').textContent='Авторизация...';
+
+    fetch(API+'/auth/telegram-webapp',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({init_data:initData})
+    }).then(function(r){return r.json()}).then(function(d){
+        if(d.status==='ok' && d.token){
+            token=d.token;
+            tgId=d.telegram_id;
+            localStorage.setItem('vpn_token',token);
+            localStorage.setItem('vpn_tg_id',tgId);
+            showApp();
+        }else{
+            document.getElementById('loginStatus').textContent='Ошибка авторизации';
+        }
+    }).catch(function(e){
+        document.getElementById('loginStatus').textContent='Ошибка сети: '+e.message;
+    });
+}
+
+function doLogout(){
+    token=null;tgId=null;
+    localStorage.removeItem('vpn_token');
+    localStorage.removeItem('vpn_tg_id');
+    location.reload();
+}
+
+function api(ep){
+    return fetch(API+ep,{headers:{'Authorization':'Bearer '+token}}).then(function(r){
+        if(r.status===401){doLogout();return Promise.reject('Unauthorized');}
+        return r.json();
+    });
+}
+
+function showApp(){
+    document.getElementById('loginScreen').classList.remove('active');
+    document.getElementById('appScreen').classList.add('active');
+    loadAll().then(function(){goTo('home')});
+}
+
+// === DATA ===
+function loadAll(){
+    return Promise.all([
+        api('/subscription').then(function(d){sub=d}).catch(function(){}),
+        api('/stats').then(function(d){stats=d}).catch(function(){}),
+        api('/config').then(function(d){cfg=d}).catch(function(){}),
+        api('/price').then(function(d){price=d}).catch(function(){}),
+        api('/referral').then(function(d){ref=d}).catch(function(){})
+    ]);
+}
+
+// === NAVIGATION ===
+function goTo(tab){
+    currentTab=tab;
+    var btns=document.querySelectorAll('.nav-btn');
+    var tabs=['home','configs','payment','help'];
+    btns.forEach(function(b,i){b.classList.toggle('active',tabs[i]===tab)});
+
+    var el=document.getElementById('pageContent');
+    if(tab==='home') renderHome(el);
+    else if(tab==='configs') renderConfigs(el);
+    else if(tab==='payment') renderPayment(el);
+    else if(tab==='help') renderHelp(el);
+}
+
+// === HOME ===
+function renderHome(el){
+    if(!sub){el.innerHTML='<div class="spinner"></div>';loadAll().then(function(){renderHome(el)});return;}
+    var active=sub.is_active;
+    var days=sub.days_left||0;
+    var hours=sub.hours_left||0;
+    var totalTraffic=(stats&&stats.total_traffic_gb)?stats.total_traffic_gb:0;
+    var expDate=sub.expiration_date?new Date(sub.expiration_date).toLocaleDateString('ru-RU'):'—';
+
+    var h='<div class="stat-grid">';
+    h+='<div class="stat-box"><div class="num c-'+(active?'success':'danger')+'">'+(active?'Активна':'Неактивна')+'</div><div class="lbl">Подписка</div></div>';
+    h+='<div class="stat-box"><div class="num c-accent">'+totalTraffic+' ГБ</div><div class="lbl">Трафик</div></div>';
+    h+='<div class="stat-box"><div class="num c-warning">'+days+' дн</div><div class="lbl">Осталось</div></div>';
+    h+='<div class="stat-box"><div class="num">'+sub.config_count+'</div><div class="lbl">Конфигов</div></div>';
+    h+='</div>';
+
+    h+='<div class="card">';
+    h+='<div class="card-title">📅 Срок действия</div>';
+    h+='<div class="card-value">'+expDate+'</div>';
+    var pct=0;
+    if(days>0 && days<=30) pct=((30-days)/30*100);
+    else if(days<=0) pct=100;
+    var color=days>7?'var(--success)':days>3?'var(--warning)':'var(--danger)';
+    h+='<div class="progress"><div class="progress-bar" style="width:'+pct+'%;background:'+color+'"></div></div>';
+    h+='</div>';
+
+    if(!active){
+        h+='<button class="btn btn-primary" onclick="goTo(\'payment\')">💳 Продлить подписку</button>';
+    }
+
+    h+='<button class="btn btn-outline" onclick="loadAll().then(function(){goTo(currentTab)})">🔄 Обновить</button>';
+
+    el.innerHTML=h;
+}
+
+// === CONFIGS ===
+function renderConfigs(el){
+    if(!cfg){el.innerHTML='<div class="spinner"></div>';loadAll().then(function(){renderConfigs(el)});return;}
+    var configs=cfg.configs||[];
+    if(!configs.length){
+        el.innerHTML='<div class="card" style="text-align:center;padding:32px"><div style="font-size:48px;margin-bottom:12px">📋</div><div style="font-size:16px;font-weight:600;margin-bottom:8px">Нет конфигов</div><div style="color:var(--text2)">Обратитесь к администратору</div></div>';
+        return;
+    }
+
+    var h='<div class="card-title" style="margin-bottom:12px">Ваши конфигурации WireGuard</div>';
+    configs.forEach(function(c){
+        var statusBadge=c.enabled?'<span class="badge badge-success">Активен</span>':'<span class="badge badge-danger">Откл.</span>';
+        var exp=c.expiration_date?new Date(c.expiration_date).toLocaleDateString('ru-RU'):'—';
+        var traffic=c.traffic_gb?c.traffic_gb.toFixed(2)+' ГБ':'0 ГБ';
+
+        h+='<div class="cfg-item">';
+        h+='<div><div class="cfg-name">'+c.name+'</div>';
+        h+='<div class="cfg-sub">'+statusBadge+' · до '+exp+' · '+traffic+'</div></div>';
+        h+='<div class="cfg-actions">';
+        h+='<button class="cfg-btn" onclick="downloadConfig(\''+c.name+'\')" title="Скачать">⬇</button>';
+        h+='<button class="cfg-btn" onclick="showQR(\''+c.name+'\')" title="QR">📱</button>';
+        h+='</div></div>';
+    });
+
+    h+='<div style="margin-top:12px"><div class="card-title">Подключение</div>';
+    h+='<div class="card" style="border-left:3px solid var(--accent2)">';
+    h+='<div style="font-size:13px;font-weight:600;margin-bottom:6px">Шаг 1 — Установите WireGuard</div>';
+    h+='<div style="display:flex;gap:8px;flex-wrap:wrap">';
+    h+='<a href="https://apps.apple.com/us/app/wireguard/id1441195209" target="_blank" class="btn btn-outline" style="flex:1;min-width:120px">iOS</a>';
+    h+='<a href="https://play.google.com/store/apps/details?id=com.wireguard.android" target="_blank" class="btn btn-outline" style="flex:1;min-width:120px">Android</a>';
+    h+='</div></div>';
+    h+='<div class="card" style="border-left:3px solid var(--accent)">';
+    h+='<div style="font-size:13px;font-weight:600;margin-bottom:6px">Шаг 2 — Импортируйте конфиг</div>';
+    h+='<div style="font-size:12px;color:var(--text2)">Скачайте конфиг ↑ и откройте в приложении WireGuard</div>';
+    h+='</div></div>';
+
+    el.innerHTML=h;
+}
+
+function downloadConfig(name){
+    api('/config/'+encodeURIComponent(name)).then(function(d){
+        if(d.config){
+            var blob=new Blob([d.config],{type:'text/plain'});
+            var a=document.createElement('a');
+            a.href=URL.createObjectURL(blob);
+            a.download=name+'.conf';
+            a.click();
+        }else{
+            alert('Не удалось получить конфиг');
+        }
+    }).catch(function(){alert('Ошибка загрузки конфига')});
+}
+
+function showQR(name){
+    var el=document.getElementById('pageContent');
+    el.innerHTML='<div class="spinner"></div>';
+    api('/config/'+encodeURIComponent(name)+'/import-url').then(function(d){
+        var importUrl=d.import_url||d.url||'';
+        if(!importUrl){
+            api('/config/'+encodeURIComponent(name)).then(function(d2){
+                var configStr=d2.config||'';
+                if(configStr) importUrl='vpn://'+encodeURIComponent(configStr);
+                renderQR(el,importUrl,name);
+            });
+        }else{
+            renderQR(el,importUrl,name);
+        }
+    }).catch(function(){el.innerHTML='<div class="card" style="color:var(--danger)">Ошибка</div>'});
+}
+
+function renderQR(el,url,name){
+    if(!url){el.innerHTML='<div class="card" style="color:var(--danger)">Не удалось создать QR</div>';return;}
+    var qrUrl='https://api.qrserver.com/v1/create-qr-code/?size=256x256&data='+encodeURIComponent(url);
+    el.innerHTML='<div class="qr-wrap"><div style="font-size:18px;font-weight:700;margin-bottom:12px">📱 QR-код для '+name+'</div><img src="'+qrUrl+'" alt="QR"><div style="margin-top:12px;font-size:12px;color:var(--text2)">Отсканируйте в приложении WireGuard</div><button class="btn btn-outline" style="margin-top:12px" onclick="goTo(\'configs\')">← Назад</button></div>';
+}
+
+// === PAYMENT ===
+function renderPayment(el){
+    if(!price){el.innerHTML='<div class="spinner"></div>';loadAll().then(function(){renderPayment(el)});return;}
+    var pd=price.payment_details||{};
+    var card=pd.card||'';
+    var phone=pd.phone||'';
+    var bank=pd.bank||'';
+
+    var h='<div class="card">';
+    h+='<div class="card-title">💰 Стоимость</div>';
+    h+='<div class="card-value c-accent">'+(price.price||0)+' ₽ <span style="font-size:14px;color:var(--text2)">/ месяц</span></div>';
+    h+='</div>';
+
+    h+='<div class="card">';
+    h+='<div class="card-title">📋 Реквизиты для оплаты</div>';
+    if(bank){
+        h+='<div class="pay-row"><span class="pay-label">Банк</span><span class="pay-val">'+esc(bank)+'</span></div>';
+    }
+    if(card){
+        h+='<div class="pay-row"><span class="pay-label">Карта</span><span class="pay-val">'+esc(card)+'<button class="copy-btn" onclick="copyText(\''+esc(card)+'\')">Копировать</button></span></div>';
+    }
+    if(phone){
+        h+='<div class="pay-row"><span class="pay-label">Телефон</span><span class="pay-val">'+esc(phone)+'<button class="copy-btn" onclick="copyText(\''+esc(phone)+'\')">Копировать</button></span></div>';
+    }
+    h+='</div>';
+
+    h+='<div class="card" style="border-left:3px solid var(--warning)">';
+    h+='<div style="font-size:13px;font-weight:600;margin-bottom:6px">⚠️ После оплаты</div>';
+    h+='<div style="font-size:12px;color:var(--text2)">Отправьте скриншот чека в бота @vpnkvnbot для подтверждения оплаты</div>';
+    h+='</div>';
+
+    h+='<a href="https://t.me/vpnkvnbot" target="_blank" class="btn btn-primary">📨 Отправить чек в бот</a>';
+
+    el.innerHTML=h;
+}
+
+function copyText(text){
+    if(navigator.clipboard){navigator.clipboard.writeText(text).then(function(){showToast('Скопировано!')})}
+    else{
+        var t=document.createElement('textarea');t.value=text;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);
+        showToast('Скопировано!');
+    }
+}
+
+// === HELP ===
+function renderHelp(el){
+    var h='<div class="card" style="text-align:center;padding:24px">';
+    h+='<div style="font-size:48px;margin-bottom:8px">🛡</div>';
+    h+='<div style="font-size:18px;font-weight:700;margin-bottom:4px">КВН VPN</div>';
+    h+='<div style="color:var(--text2);font-size:13px">Быстрый и надёжный VPN для всех</div>';
+    h+='</div>';
+
+    h+='<div class="card">';
+    h+='<div class="help-item"><div class="help-icon">📱</div><div class="help-text"><h3>Как подключиться?</h3><p>Скачайте WireGuard, импортируйте конфиг из вкладки "Конфиги"</p></div></div>';
+    h+='<div class="help-item"><div class="help-icon">💳</div><div class="help-text"><h3>Как оплатить?</h3><p>Переведите на реквизиты из вкладки "Оплата" и отправьте скриншот в бот</p></div></div>';
+    h+='<div class="help-item"><div class="help-icon">👥</div><div class="help-text"><h3>Реферальная программа</h3><p>Пригласите друга и получите +10 дней подписки</p></div></div>';
+    h+='<div class="help-item"><div class="help-icon">⚡</div><div class="help-text"><h3>Скорость</h3><p>Сервер в Амстердаме, канал 2.5 Гбит/с</p></div></div>';
+    h+='</div>';
+
+    if(ref && ref.referral_link){
+        h+='<div class="ref-card">';
+        h+='<div style="font-size:20px;font-weight:700;margin-bottom:4px">👥 Реферальная ссылка</div>';
+        h+='<div style="font-size:13px;color:var(--text2);margin-bottom:8px">Пригласите друга — получите +'+(ref.bonus_days||10)+' дней</div>';
+        h+='<div class="ref-link">'+esc(ref.referral_link)+'</div>';
+        h+='<div style="display:flex;gap:8px">';
+        h+='<button class="btn btn-outline" style="flex:1" onclick="copyText(\''+esc(ref.referral_link)+'\')">📋 Копировать</button>';
+        h+='<button class="btn btn-primary" style="flex:1" onclick="shareRef()">📤 Поделиться</button>';
+        h+='</div>';
+        h+='<div style="margin-top:8px;font-size:12px;color:var(--text2)">Приглашено: '+(ref.referral_count||0)+' чел.</div>';
+        h+='</div>';
+    }
+
+    h+='<a href="https://t.me/vpnkvnbot" target="_blank" class="btn btn-primary">🤖 Открыть бот</a>';
+
+    el.innerHTML=h;
+}
+
+function shareRef(){
+    if(ref && ref.share_text && navigator.share){
+        navigator.share({title:'КВН VPN',text:ref.share_text}).catch(function(){});
+    }else if(ref && ref.referral_link){
+        copyText(ref.referral_link);
+    }
+}
+
+// === UTILS ===
+function esc(s){return s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'):''}
+
+function showToast(msg){
+    var t=document.createElement('div');
+    t.style.cssText='position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--success);color:#000;padding:8px 20px;border-radius:8px;font-weight:600;z-index:999;font-size:13px';
+    t.textContent=msg;document.body.appendChild(t);
+    setTimeout(function(){t.remove()},2000);
+}
+
+// === START ===
+init();
+</script>
+</body>
+</html>
